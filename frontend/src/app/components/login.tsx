@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -34,6 +36,9 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
   const handleLogin = () => {
     const role = deriveRole(password);
     const userId = makeUserId();
+    localStorage.setItem('userId', userId);
+    localStorage.setItem('role', role);
+    localStorage.setItem('name', name.trim() || 'Anonymous');
     onLogin({ role, name: name.trim() || 'Anonymous', userId });
     onClose();
   };

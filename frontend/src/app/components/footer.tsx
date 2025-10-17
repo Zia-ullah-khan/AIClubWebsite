@@ -1,6 +1,23 @@
-import React from "react";
+ "use client";
 
-export default function Footer() {
+ import React, { useEffect, useState } from "react";
+
+ export default function Footer() {
+   const [userId, setUserId] = useState<string | null>(null);
+   const [userName, setUserName] = useState<string | null>(null);
+
+   useEffect(() => {
+     try {
+       const id = typeof window !== "undefined" ? window.localStorage.getItem("userId") : null;
+       const name = typeof window !== "undefined" ? window.localStorage.getItem("name") : null;
+       setUserName(name);
+       setUserId(id);
+     } catch {
+       setUserId(null);
+       setUserName(null);
+     }
+   }, []);
+
   return (
     <footer className="bg-[#0F0F19] border-t border-[#875FFF]/10 text-gray-400 py-8">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -22,6 +39,9 @@ export default function Footer() {
           <a href="#" aria-label="LinkedIn" className="hover:text-white transition">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.762 2.239 5 5 5h14c2.762 0 5-2.238 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.268c-.966 0-1.75-.79-1.75-1.764 0-.972.784-1.761 1.75-1.761s1.75.789 1.75 1.761c0 .974-.784 1.764-1.75 1.764zm13.5 11.268h-3v-5.604c0-1.337-.027-3.059-1.863-3.059-1.864 0-2.149 1.454-2.149 2.957v5.706h-3v-10h2.879v1.367h.041c.401-.76 1.381-1.562 2.843-1.562 3.04 0 3.602 2.001 3.602 4.602v5.593z"/></svg>
           </a>
+        </div>
+        <div>
+        <p className="mt-1">Username: <span className="break-all">{userName || 'N/A'}</span> | User ID: <span className="break-all">{userId || 'N/A'}</span></p>
         </div>
       </div>
     </footer>

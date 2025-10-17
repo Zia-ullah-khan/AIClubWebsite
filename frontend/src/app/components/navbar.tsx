@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { LoginModal } from "./login";
+import CheckInPage from "./checkin";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 
 interface NavLink {
     name: string;
@@ -18,8 +20,8 @@ const navLinks: NavLink[] = [
 export default function NavBar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
-    const [userId, setUserId] = useState<string | null>(null);
-    const [userInfo, setUserInfo] = useState<{name: string; role: string} | null>(null);
+    // Local login state is handled by LoginModal via localStorage; no component state needed here
+    const [isCheckInOpen, setIsCheckInOpen] = useState(false);
 
     return (
         <>
@@ -52,6 +54,13 @@ export default function NavBar() {
                             onClick={(e) => { e.preventDefault(); setIsLoginOpen(true); }}
                         >
                             Member Login
+                        </a>
+                        <a
+                            href="#checkin"
+                            className="hidden sm:inline-block text-sm font-bold py-2 px-4 rounded-lg bg-[#875FFF] hover:bg-[#6e46cc] text-white transition"
+                            onClick={(e) => { e.preventDefault(); setIsCheckInOpen(true); }}
+                        >
+                            Check In
                         </a>
 
                         <button
@@ -98,18 +107,22 @@ export default function NavBar() {
                 onClose={() => setIsLoginOpen(false)}
                 onLogin={({ role, name, userId }) => {
                     console.log("Demo login:", { role, name, userId });
-                    setUserInfo({ name, role });
-                    setUserId(userId);
                     setIsLoginOpen(false);
                 }}
             />
 
-            {/* Simple userId banner at bottom of page */}
-            {userId && (
-              <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/70 text-gray-200 text-xs sm:text-sm px-3 py-2 text-center">
-                Logged in as {userInfo?.name} ({userInfo?.role}) • UserID: <span className="text-[#875FFF] font-semibold">{userId}</span>
-              </div>
-            )}
+            {/* Check-In Modal */}
+            <Dialog open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
+                <DialogContent className="bg-[#1a1a2e] border-white/10 text-white sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Meeting Check-In</DialogTitle>
+                        <DialogDescription className="text-gray-400">Enter your details to record your attendance.</DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-2">
+                        <CheckInPage clubId="1" />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
