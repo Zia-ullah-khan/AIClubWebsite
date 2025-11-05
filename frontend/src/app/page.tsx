@@ -1,11 +1,11 @@
 import NavBar from "./components/navbar";
 import Footer from "./components/footer";
-
-//Get data from localhost:3000/api/club-data
+//get API_URL from .env.local
+const API_URL = process.env.API_URL || 'http://localhost:3001';
 
 
 export default async function Home() {
-  const CLUB_DATA = await fetch('http://localhost:3001/api/club-data').then(res => res.json());
+  const CLUB_DATA = await fetch(`${API_URL}/api/club-data`).then(res => res.json());
 
   return (
     <div className="min-h-screen bg-[#0F0F19] text-white font-sans">

@@ -44,68 +44,82 @@ initMongo().catch((e) => console.error('initMongo error', e));
 // POST /api/checkin
 // Body: { name?: string, email?: string, userId?: string, clubId: string, meetingName?: string }
 router.post('/api/checkin', async (req, res) => {
-	const { name, email, userId, clubId, meetingName } = req.body || {};
+	const { name, email, clubId, meetingName } = req.body || {};
 
-	if (!clubId) {
-		return res.status(400).json({ ok: false, error: 'Missing clubId' });
+	if (!clubId || !email || !name) {
+		return res.status(400).json({ ok: false, error: 'Missing required fields: clubId, email, name' });
 	}
 
-	// Accept either a logged-in userId OR a manual name+email pair
-	if (!(userId || (name && email))) {
-		return res.status(400).json({ ok: false, error: 'Provide either userId or both name and email' });
+	if (!mongoCollection) {
+		return res.status(503).json({ ok: false, error: 'Database service is not available.' });
 	}
 
-	const record = {
-		id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-		timestamp: new Date().toISOString(),
-		meeting_name: meetingName || `Meeting Check-In at ${new Date().toLocaleTimeString()}`,
-		clubId,
-		...(userId ? { userId } : {}),
-		...(name ? { name } : {}),
-		...(email ? { email } : {}),
-	};
+	const today = new Date();
+	today.setHours(0, 0, 0, 0); // Start of today in local time
 
-	// Try to persist to MongoDB if available
-	if (mongoCollection) {
-		try {
-			const result = await mongoCollection.insertOne(record);
-			// attach mongo id for response
-			record._id = result.insertedId;
-		} catch (err) {
-			console.error('Mongo insert error:', err && err.message ? err.message : err);
-			// fall through to file persistence
-		}
-	}
+	const effectiveMeetingName = meetingName || `General Meeting`;
 
-	// keep local store in sync
-	CHECK_INS.push(record);
 	try {
-		if (!fs.existsSync(STORE_PATH)) {
-			fs.writeFileSync(STORE_PATH, JSON.stringify([], null, 2));
-		}
-		fs.writeFileSync(STORE_PATH, JSON.stringify(CHECK_INS, null, 2));
-	} catch (e) {
-		console.error('Failed to write checkins file:', e && e.message ? e.message : e);
-	}
+		const user = await mongoCollection.findOne({ email });
 
-	return res.status(201).json({ ok: true, record });
+		const newMeetingRecord = {
+			meeting_name: effectiveMeetingName,
+			time_checked_in: new Date().toISOString(),
+		};
+
+		if (user) {
+			// User exists, check for duplicate check-in for the same meeting name today
+			const hasCheckedInToday = user.meetings && user.meetings.some(
+				(m) =>
+					m.meeting_name === effectiveMeetingName &&
+					new Date(m.time_checked_in) >= today
+			);
+
+			if (hasCheckedInToday) {
+				return res.status(409).json({ ok: false, error: 'You have already checked in for this meeting today.' });
+			}
+
+			// Add new check-in to existing user
+			const result = await mongoCollection.updateOne(
+				{ _id: user._id },
+				{ $push: { meetings: newMeetingRecord } }
+			);
+
+			if (result.modifiedCount === 1) {
+				return res.status(200).json({ ok: true, message: 'Check-in successful.' });
+			} else {
+				throw new Error('Failed to update user check-in.');
+			}
+		} else {
+			// New user, create a new document
+			const newUser = {
+				name,
+				email,
+				account_created: new Date().toISOString(),
+				meetings: [newMeetingRecord],
+			};
+			const result = await mongoCollection.insertOne(newUser);
+			return res.status(201).json({ ok: true, record: { _id: result.insertedId, ...newUser } });
+		}
+	} catch (err) {
+		console.error('Mongo operation error:', err.message);
+		return res.status(500).json({ ok: false, error: 'An internal server error occurred.' });
+	}
 });
 
-// GET /api/checkins?clubId=1
+// GET /api/checkins (now returns user data)
 router.get('/api/checkins', async (req, res) => {
-	const { clubId } = req.query;
 	if (mongoCollection) {
 		try {
-			const q = clubId ? { clubId: String(clubId) } : {};
-			const docs = await mongoCollection.find(q).sort({ timestamp: -1 }).toArray();
-			return res.json({ ok: true, records: docs });
+			const users = await mongoCollection.find({}).sort({ account_created: -1 }).toArray();
+			return res.json({ ok: true, records: users });
 		} catch (err) {
 			console.error('Mongo query error:', err && err.message ? err.message : err);
-			// fall back
+			return res.status(500).json({ ok: false, error: 'Failed to retrieve records.' });
 		}
 	}
-	const records = clubId ? CHECK_INS.filter((r) => r.clubId === String(clubId)) : CHECK_INS;
-	return res.json({ ok: true, records });
+	// Fallback to file-based store is no longer compatible with the new schema.
+	return res.status(503).json({ ok: false, error: 'Database service is not available.' });
 });
 
 module.exports = router;
