@@ -178,7 +178,7 @@ function scheduleReminders() {
   });
 
   // Schedule for every Wednesday at 1:30 PM
-  cron.schedule('30 13 * * 3', async () => {
+  cron.schedule('30 14 * * 3', async () => {
     try {
       await sendWednesdayReminder();
     } catch (e) {
