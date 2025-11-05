@@ -4,10 +4,15 @@
   "private": true,
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "send:reminders": "node sendRemindersNow.js",
+    "send:test": "node sendTestEmail.js"
   },
   "dependencies": {
+    "csv-parser": "^3.2.0",
     "express": "^5.1.0",
-    "mongodb": "^5.8.0"
+    "mongodb": "^5.8.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.15"
   }
 }

@@ -18,7 +18,8 @@ try {
 
 // MongoDB connection (optional). Provide MONGO_URI env var to enable.
 let mongoClient = null;
-let mongoCollection = null;
+let mongoCollection = null; // users collection
+let mongoDb = null; // db handle for accessing other collections (events)
 
 async function initMongo() {
 	const uri = process.env.MONGO_URI;
@@ -29,8 +30,9 @@ async function initMongo() {
 	try {
 		mongoClient = new MongoClient(uri);
 		await mongoClient.connect();
-		const db = mongoClient.db(dbName);
-		mongoCollection = db.collection(collName);
+	const db = mongoClient.db(dbName);
+	mongoDb = db;
+	mongoCollection = db.collection(collName);
 		console.log('Connected to MongoDB');
 	} catch (err) {
 		console.error('Mongo init error:', err && err.message ? err.message : err);
@@ -44,39 +46,51 @@ initMongo().catch((e) => console.error('initMongo error', e));
 // POST /api/checkin
 // Body: { name?: string, email?: string, userId?: string, clubId: string, meetingName?: string }
 router.post('/api/checkin', async (req, res) => {
-	const { name, email, clubId, meetingName } = req.body || {};
+	const { name, email } = req.body || {};
 
-	if (!clubId || !email || !name) {
-		return res.status(400).json({ ok: false, error: 'Missing required fields: clubId, email, name' });
+	if (!email || !name) {
+		return res.status(400).json({ ok: false, error: 'Missing required fields: email, name' });
 	}
 
 	if (!mongoCollection) {
 		return res.status(503).json({ ok: false, error: 'Database service is not available.' });
 	}
 
-	const today = new Date();
+	const now = new Date();
+	const today = new Date(now);
 	today.setHours(0, 0, 0, 0); // Start of today in local time
 
-	const effectiveMeetingName = meetingName || `General Meeting`;
+	// Resolve the active event based on current time window
+	let activeEvent = null;
+	try {
+		activeEvent = await mongoDb
+			.collection('events')
+			.findOne({ startAt: { $lte: now }, endAt: { $gte: now } });
+	} catch (e) {
+		console.error('Failed to resolve active event:', e && e.message ? e.message : e);
+	}
+
+	if (!activeEvent) {
+		return res.status(409).json({ ok: false, error: 'No active event is scheduled at this time.' });
+	}
 
 	try {
 		const user = await mongoCollection.findOne({ email });
 
 		const newMeetingRecord = {
-			meeting_name: effectiveMeetingName,
-			time_checked_in: new Date().toISOString(),
+			meeting_id: activeEvent._id,
+			meeting_name: activeEvent.title || 'Meeting',
+			time_checked_in: now.toISOString(),
 		};
 
 		if (user) {
-			// User exists, check for duplicate check-in for the same meeting name today
-			const hasCheckedInToday = user.meetings && user.meetings.some(
-				(m) =>
-					m.meeting_name === effectiveMeetingName &&
-					new Date(m.time_checked_in) >= today
+			// User exists, prevent duplicate check-in for the same meeting (by id)
+			const hasCheckedInForMeeting = user.meetings && user.meetings.some(
+				(m) => String(m.meeting_id) === String(activeEvent._id)
 			);
 
-			if (hasCheckedInToday) {
-				return res.status(409).json({ ok: false, error: 'You have already checked in for this meeting today.' });
+			if (hasCheckedInForMeeting) {
+				return res.status(409).json({ ok: false, error: 'You have already checked in for this meeting.' });
 			}
 
 			// Add new check-in to existing user

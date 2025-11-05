@@ -1,7 +1,7 @@
 import NavBar from "./components/navbar";
 import Footer from "./components/footer";
-//get API_URL from .env.local
-const API_URL = process.env.API_URL || 'http://localhost:3001';
+// Get API base URL from env for server-side rendering. Fallback to local dev.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 
 export default async function Home() {
@@ -49,7 +49,7 @@ export default async function Home() {
           <h2 className="text-3xl font-bold mb-6 text-[#875FFF]">Upcoming Events</h2>
           <div className="space-y-4">
             {CLUB_DATA.upcomingEvents.map((event, idx) => (
-              <a key={idx} href={event.link} className="block bg-[#1a1a2e] p-4 rounded-xl shadow-lg hover:bg-[#2c2c47] transition border-l-4 border-[#875FFF]">
+              <a key={event.id ?? idx} href={`/events?id=${event.id}`} className="block bg-[#1a1a2e] p-4 rounded-xl shadow-lg hover:bg-[#2c2c47] transition border-l-4 border-[#875FFF]">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-gray-400">{event.date}</span>
                   <span className="text-sm text-[#875FFF]">{idx < 2 ? "New!" : ""}</span>
