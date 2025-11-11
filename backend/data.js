@@ -29,12 +29,13 @@ async function getUpcomingEvents() {
     const docs = await db
       .collection('events')
       .find({})
-      .project({ _id: 1, date: 1, title: 1, link: 1 })
+      .project({ _id: 1, dateDisplay: 1, date: 1, title: 1, link: 1, startAt: 1 })
+      .sort({ startAt: 1 })
       .toArray();
     // Normalize to include string id for frontend routing
     return docs.map((e) => ({
       id: e._id?.toString?.() || String(e._id),
-      date: e.dateDisplay || e.date,
+      date: e.dateDisplay || e.date || 'TBA',
       title: e.title,
       link: e.link || '/events',
     }));
