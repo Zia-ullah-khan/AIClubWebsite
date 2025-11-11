@@ -61,6 +61,24 @@ app.get('/api/events/:id', async (req, res) => {
     }
 });
 
+// Get all events
+app.get('/api/events', async (req, res) => {
+    try {
+        const db = await getDb();
+        if (!db) return res.status(503).json({ ok: false, error: 'Database unavailable' });
+        const events = await db.collection('events').find({}).sort({ startAt: 1 }).toArray();
+        // Normalize ids to strings for client
+        const normalizedEvents = events.map(ev => ({
+            ...ev,
+            id: ev._id.toString()
+        }));
+        res.json({ ok: true, events: normalizedEvents });
+    } catch (e) {
+        console.error('Error fetching events:', e && e.message ? e.message : e);
+        res.status(500).json({ ok: false, error: 'Failed to fetch events' });
+    }
+});
+
 // Mount check-in routes
 app.use(checkInRouter);
 
