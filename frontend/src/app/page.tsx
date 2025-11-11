@@ -48,18 +48,26 @@ export default async function Home() {
         <aside className="lg:col-span-1">
           <h2 className="text-3xl font-bold mb-6 text-[#875FFF]">Upcoming Events</h2>
           <div className="space-y-4">
-            {CLUB_DATA.upcomingEvents.map((event: { id?: string; date: string; title: string }, idx: number) => (
-              <a key={event.id ?? idx} href={`/events?id=${event.id}`} className="block bg-[#1a1a2e] p-4 rounded-xl shadow-lg hover:bg-[#2c2c47] transition border-l-4 border-[#875FFF]">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-gray-400">{event.date}</span>
-                  <span className="text-sm text-[#875FFF]">{idx < 2 ? "New!" : ""}</span>
-                </div>
-                <p className="text-lg font-medium mt-1">{event.title}</p>
-              </a>
-            ))}
-            <a href="/events" className="inline-block bg-[#875FFF] hover:bg-[#6e46cc] text-white font-semibold py-2.5 px-5 rounded-lg">
-              View All Events
-            </a>
+            {CLUB_DATA.upcomingEvents && CLUB_DATA.upcomingEvents.length > 0 ? (
+              <>
+                {CLUB_DATA.upcomingEvents.map((event: { id?: string; date: string; title: string }, idx: number) => (
+                  <a key={event.id ?? idx} href={`/events?id=${event.id}`} className="block bg-[#1a1a2e] p-4 rounded-xl shadow-lg hover:bg-[#2c2c47] transition border-l-4 border-[#875FFF]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-gray-400">{event.date}</span>
+                      <span className="text-xs font-bold text-green-400 bg-green-400/20 px-2 py-1 rounded">Upcoming</span>
+                    </div>
+                    <p className="text-lg font-medium mt-1">{event.title}</p>
+                  </a>
+                ))}
+                <a href="/events" className="inline-block bg-[#875FFF] hover:bg-[#6e46cc] text-white font-semibold py-2.5 px-5 rounded-lg">
+                  View All Events
+                </a>
+              </>
+            ) : (
+              <div className="bg-[#1a1a2e] p-4 rounded-xl border border-gray-700 text-gray-400">
+                <p>No upcoming events at this time.</p>
+              </div>
+            )}
           </div>
         </aside>
       </section>

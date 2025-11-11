@@ -1,9 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://aiapi.rfas.software';
 
 type SearchParams = { id?: string };
 
-export default async function EventsPage({ searchParams }: { searchParams: SearchParams }) {
-  const id = searchParams?.id;
+export default async function EventsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const params = await searchParams;
+  const id = params?.id;
 
   if (!id) {
     return (
