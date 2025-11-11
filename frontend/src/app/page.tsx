@@ -1,7 +1,7 @@
 import NavBar from "./components/navbar";
 import Footer from "./components/footer";
-// Get API base URL from env for server-side rendering. Fallback to local dev.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Get API base URL from env for server-side rendering. Fallback to production.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://aiapi.rfas.software';
 
 
 export default async function Home() {
@@ -35,7 +35,7 @@ export default async function Home() {
           <div className="bg-[#1a1a2e] p-8 rounded-xl shadow-xl border border-[#875FFF]/30">
             <p className="text-lg text-gray-300 mb-8">{CLUB_DATA.mission}</p>
             <div className="grid sm:grid-cols-3 gap-6">
-              {CLUB_DATA.whyJoin.map((item, idx) => (
+              {CLUB_DATA.whyJoin.map((item: { title: string; detail: string }, idx: number) => (
                 <div key={idx} className="bg-[#0f0f19] p-4 rounded-lg border border-gray-700 hover:border-[#875FFF] transition">
                   <h3 className="text-xl font-semibold mb-2 text-[#875FFF]">{item.title}</h3>
                   <p className="text-sm text-gray-400">{item.detail}</p>
@@ -48,7 +48,7 @@ export default async function Home() {
         <aside className="lg:col-span-1">
           <h2 className="text-3xl font-bold mb-6 text-[#875FFF]">Upcoming Events</h2>
           <div className="space-y-4">
-            {CLUB_DATA.upcomingEvents.map((event, idx) => (
+            {CLUB_DATA.upcomingEvents.map((event: { id?: string; date: string; title: string }, idx: number) => (
               <a key={event.id ?? idx} href={`/events?id=${event.id}`} className="block bg-[#1a1a2e] p-4 rounded-xl shadow-lg hover:bg-[#2c2c47] transition border-l-4 border-[#875FFF]">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-gray-400">{event.date}</span>
